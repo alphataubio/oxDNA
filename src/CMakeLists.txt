@@ -323,6 +323,42 @@ ELSE()
 	ADD_EXECUTABLE(${exe_name} ${oxDNA_SOURCES})
 	ADD_EXECUTABLE(DNAnalysis ${DNAnalysis_SOURCES})
 	ADD_LIBRARY(${lib_name} ${common_SOURCES})
+
+  # ##########################################
+  # cuTENSOR
+  # ##########################################
+
+  if(NOT DEFINED ENV{CUTENSOR_ROOT} AND NOT DEFINED CUTENSOR_ROOT)
+    message(FATAL_ERROR "CUTENSOR_ROOT not set!")
+  else()
+    if(DEFINED ENV{CUTENSOR_ROOT})
+      set(CUTENSOR_ROOT "$ENV{CUTENSOR_ROOT}")
+    endif()
+    message("-- Looking for cuTENSOR in ${CUTENSOR_ROOT}")
+    if(NOT EXISTS ${CUTENSOR_ROOT})
+      message(FATAL_ERROR "Cannot find CUTENSOR_ROOT")
+    endif()
+  endif()
+
+  if(NOT TARGET cutensor)
+    add_library(cutensor SHARED IMPORTED)
+    if(WIN32)
+      set(CUTENSOR_LIBRARY_NAME "cutensor.dll")
+      set(CUTENSOR_LIBRARY_DEF "cutensor.lib")
+    else()
+      set(CUTENSOR_LIBRARY_NAME "libcutensor.so")
+    endif()
+    if("${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}" VERSION_GREATER_EQUAL "11.1")
+      set(LIB_DIR "/lib/${CUDA_VERSION_MAJOR}")
+    else()
+      set(LIB_DIR "/lib/${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}")
+    endif()
+    set_target_properties(cutensor PROPERTIES
+      IMPORTED_LOCATION "${CUTENSOR_ROOT}/${LIB_DIR}/${CUTENSOR_LIBRARY_NAME}"
+      IMPORTED_IMPLIB "${CUTENSOR_ROOT}/${LIB_DIR}/${CUTENSOR_LIBRARY_DEF}"
+      INTERFACE_INCLUDE_DIRECTORIES "${CUTENSOR_ROOT}/include")
+  endif()
+
 ENDIF(CUDA)
 
 ADD_EXECUTABLE(confGenerator ${confGenerator_SOURCES})
